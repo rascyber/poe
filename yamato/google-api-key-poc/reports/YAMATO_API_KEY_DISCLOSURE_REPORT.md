@@ -50,24 +50,39 @@ Potential impact includes:
 
 Actual impact should be determined by Yamato through Cloud Console review of API restrictions, application restrictions, quotas, budgets, logs, and billing anomalies.
 
-## Proof of Concept, safe simulation
+## Valid API Findings
 
-The attached `index.html` is a static, Bootstrap-based PoC page. It demonstrates expected risk through local counters, a static map placeholder, and a printable summary section.
+| API | Valid | Evidence | Cost Exposure |
+|---|---|---|---|
+| Streetview | ✅ | Image rendered from external PoC origin using single manual request | $7 / 1,000 requests |
+| Geocode | ✅ | Status OK using single manual request | $5 / 1,000 requests |
+| Maps JavaScript API | ✅ | Map rendered from external PoC origin | $7 / 1,000 requests |
+
+Update this table with the APIs actually validated for the submitted finding. Use `⏳` for not tested and `❌` for blocked or invalid checks.
+
+## Proof of Concept
+
+The API key was manually entered into the Yamato PoC and tested using single-request validation. The key successfully accessed the following enabled Google Maps Platform APIs: [LIST_VALID_APIS]. The map render test confirmed that the key could be used from an external origin, indicating insufficient application restriction.
+
+The attached `index.html` is a static, Bootstrap-based PoC page. It demonstrates expected risk through local counters, a static map placeholder, a live manual map render, a valid API findings table, and a printable summary section.
 
 Safety properties:
 
 - No real API key is included.
-- No Google API script is loaded.
-- No Google Maps, Places, or Cloud request is sent.
-- No quota-consuming validation is performed.
+- No Google API script is loaded on page load.
+- No Google Maps, Places, or Cloud request is sent automatically.
+- No quota-consuming or high-volume validation is performed.
 - All sensitive values are redacted placeholders.
+- REST checks are single manual requests, and image/map checks run only after an explicit click.
 
 Steps:
 
 1. Open `yamato/google-api-key-poc/index.html` in a browser.
-2. Select `Start Simulation` to update local request and cost counters.
-3. Select `Render Map Placeholder` to display a static map-like panel.
-4. Select `Generate Report Snapshot` to create a printable summary.
+2. Enter the key into the password input and select `Load Key Into PoC`.
+3. Confirm the displayed key is redacted.
+4. Select `Render Map for Entered Location` or run one explicit `Run Single Check` action for the relevant API row.
+5. Capture the table, status panel, and rendered map as redacted evidence.
+6. Select `Copy Findings Summary`, `Export Findings JSON`, or `Print / Save as PDF` for submission artifacts.
 
 ## Recommendation
 

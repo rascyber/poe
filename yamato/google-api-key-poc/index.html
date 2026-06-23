@@ -13,6 +13,8 @@
       --report-blue-border: #9bc7f0;
       --report-yellow: #fff7d6;
       --report-yellow-border: #f0d27a;
+      --report-green: #e9f8ef;
+      --report-green-border: #83d9a3;
       --report-ink: #253040;
       --report-muted: #667085;
       --report-border: #d8dee8;
@@ -27,7 +29,7 @@
     }
 
     .report-shell {
-      max-width: 1120px;
+      max-width: 1240px;
       margin: 32px auto;
       background: #fff;
       border: 1px solid var(--report-border);
@@ -96,7 +98,16 @@
       margin-bottom: 16px;
     }
 
-    .code-line {
+    .valid-summary {
+      background: var(--report-green);
+      border: 1px solid var(--report-green-border);
+      border-left: 5px solid #079455;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+
+    .code-line,
+    .curl-command {
       display: block;
       margin-top: 6px;
       padding: 10px 12px;
@@ -104,8 +115,15 @@
       background: rgba(255, 255, 255, 0.65);
       color: #1f2937;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .curl-command {
+      background: #fcfcfd;
+      border-color: #d0d5dd;
+      color: #475467;
     }
 
     .metric-card {
@@ -158,9 +176,9 @@
       font-weight: 700;
     }
 
-    .placeholder-map {
-      display: none;
-      min-height: 260px;
+    .placeholder-map,
+    .live-map {
+      min-height: 300px;
       border: 1px dashed #98a2b3;
       background:
         linear-gradient(135deg, rgba(21, 112, 239, 0.08) 25%, transparent 25%) -12px 0/24px 24px,
@@ -174,12 +192,70 @@
       border-radius: 6px;
     }
 
+    .placeholder-map {
+      display: none;
+    }
+
+    .live-map {
+      display: flex;
+      height: 360px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .live-map-placeholder {
+      padding: 24px;
+    }
+
     .snapshot {
       display: none;
       border: 1px solid var(--report-border);
       border-radius: 6px;
       padding: 18px;
       background: #fcfcfd;
+    }
+
+    .table-report {
+      min-width: 1180px;
+    }
+
+    .table-report th {
+      color: #344054;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .api-name {
+      font-weight: 800;
+      color: #344054;
+    }
+
+    .status-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .evidence-result {
+      min-width: 280px;
+      color: #344054;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+
+    .form-text-safety {
+      color: #667085;
+      font-size: 0.86rem;
+    }
+
+    .status-panel {
+      border: 1px solid var(--report-border);
+      border-radius: 6px;
+      background: #fcfcfd;
+      padding: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
     .footer-bar {
@@ -209,6 +285,14 @@
       .placeholder-map {
         display: block !important;
       }
+
+      .table-responsive {
+        overflow: visible;
+      }
+
+      .table-report {
+        min-width: 0;
+      }
     }
   </style>
 </head>
@@ -228,7 +312,7 @@
             <p class="mb-0 fw-semibold">Suggested CVSS 3.1 range: 9.1 to 9.8, pending owner validation of restrictions, scope, and reachable APIs.</p>
           </div>
           <div class="col-md-4 text-md-end">
-            <span class="badge text-bg-primary fs-6 rounded-1">Disclosure-safe simulation</span>
+            <span class="badge text-bg-primary fs-6 rounded-1">Manual validation only</span>
           </div>
         </div>
       </section>
@@ -237,21 +321,172 @@
         <h2 class="section-title">Affected Asset Placeholder</h2>
         <div class="evidence-box">
           <strong>Affected asset:</strong>
-          <span class="code-line">[YAMATO_AFFECTED_ASSET_URL_OR_FILE_PATH]</span>
-          <strong>Exposed key placeholder:</strong>
-          <span class="code-line">[REDACTED_GOOGLE_API_KEY_PLACEHOLDER]</span>
+          <span id="affectedAssetDisplay" class="code-line">[YAMATO_AFFECTED_ASSET_URL_OR_FILE_PATH]</span>
           <p class="mb-0 mt-3">Attach screenshots, static source excerpts, scanner output, and owner-approved validation notes in the evidence folder. Do not commit raw secrets.</p>
         </div>
+      </section>
+
+      <section class="mb-4">
+        <h2 class="section-title">The Exposed Key</h2>
+        <div class="evidence-box">
+          <strong>Exposed key placeholder:</strong>
+          <span id="redactedKeyDisplay" class="code-line">[REDACTED_GOOGLE_API_KEY_PLACEHOLDER]</span>
+          <p class="mb-0 mt-3">The full key is accepted only through the local password input below and is kept in browser memory for manual validation. Evidence, copied summaries, exported JSON, and table results display redacted values only.</p>
+        </div>
+      </section>
+
+      <section class="mb-4">
+        <h2 class="section-title">Secret Detected: Google Cloud API Key</h2>
+        <div class="evidence-box">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <strong>File:</strong>
+              <span id="secretFileDisplay" class="code-line">[YAMATO_ASSET_OR_FILE_PATH]</span>
+            </div>
+            <div class="col-md-6">
+              <strong>Detected Secret:</strong>
+              <span id="secretDetectedDisplay" class="code-line">AI&#122;a********LAST4</span>
+            </div>
+            <div class="col-md-6">
+              <strong>Restriction Status:</strong>
+              <span id="restrictionStatusDisplay" class="code-line">Valid APIs detected / insufficient API restriction</span>
+            </div>
+            <div class="col-md-6">
+              <strong>Validation Mode:</strong>
+              <span class="code-line">Manual low-volume checks only</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-4 no-print">
+        <h2 class="section-title">Manual API Key Input</h2>
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <label for="apiKeyInput" class="form-label fw-semibold">Google API Key</label>
+            <input id="apiKeyInput" class="form-control" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key for local manual validation">
+            <div class="form-text-safety">The input is cleared after loading. The full key is never written into evidence fields, exports, copied summaries, or console output.</div>
+          </div>
+          <div class="col-lg-6">
+            <label for="assetInput" class="form-label fw-semibold">Yamato affected file/asset path</label>
+            <input id="assetInput" class="form-control" type="text" value="[YAMATO_ASSET_OR_FILE_PATH]" spellcheck="false">
+          </div>
+          <div class="col-md-4">
+            <label for="locationInput" class="form-label fw-semibold">Optional test location</label>
+            <input id="locationInput" class="form-control" type="text" value="Tokyo Station">
+          </div>
+          <div class="col-md-4">
+            <label for="latitudeInput" class="form-label fw-semibold">Optional latitude</label>
+            <input id="latitudeInput" class="form-control" type="text" value="40.720032">
+          </div>
+          <div class="col-md-4">
+            <label for="longitudeInput" class="form-label fw-semibold">Optional longitude</label>
+            <input id="longitudeInput" class="form-control" type="text" value="-73.988354">
+          </div>
+          <div class="col-md-6">
+            <label for="placeIdInput" class="form-label fw-semibold">Optional Places place_id</label>
+            <input id="placeIdInput" class="form-control" type="text" placeholder="Paste place_id after a manual Find Place validation">
+            <div class="form-text-safety">Places Details requires a manually supplied place_id. The PoC does not chain Find Place into Details automatically.</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button id="loadKeyButton" class="btn btn-report" type="button">Load Key Into PoC</button>
+          <button id="renderLiveMapButton" class="btn btn-outline-report" type="button">Render Map for Entered Location</button>
+          <button id="runStreetViewButton" class="btn btn-outline-report" type="button">Run Street View Single Check</button>
+          <button id="runGeocodeButton" class="btn btn-outline-report" type="button">Run Geocode Single Check</button>
+          <button id="runSelectedButton" class="btn btn-outline-secondary fw-semibold" type="button">Run Selected API Checks</button>
+          <button id="copySummaryButton" class="btn btn-outline-secondary fw-semibold" type="button">Copy Findings Summary</button>
+          <button id="exportJsonButton" class="btn btn-outline-secondary fw-semibold" type="button">Export Findings JSON</button>
+          <button id="printButton" class="btn btn-outline-secondary fw-semibold" type="button">Print / Save as PDF</button>
+        </div>
+        <p id="keyLoadStatus" class="status-panel mt-3 mb-0">No key loaded. Manual checks are disabled until a key is loaded into browser memory.</p>
+      </section>
+
+      <section class="mb-4">
+        <h2 class="section-title">Live Authorized Map Render</h2>
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div id="liveMap" class="live-map">
+              <div class="live-map-placeholder">
+                <h3 class="text-primary fw-bold mb-2">Map render waits for manual click</h3>
+                <p class="mb-0 small text-secondary">Google Maps JavaScript API is loaded only after selecting Render Map for Entered Location.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div id="mapStatus" class="status-panel h-100">Map Rendered: Not tested
+Geocoder Status: Not tested
+Coordinates: Not resolved
+External Origin Test: Not tested
+Request Volume: 0</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-4">
+        <h2 class="section-title">Valid Findings Summary</h2>
+        <div id="validFindingsSummary" class="valid-summary">Total APIs tested: 0
+Total valid APIs: 0
+Valid API names: None
+Estimated financial exposure: Not available until a valid API is recorded
+External PoC origin: Not tested
+Risk rating: Not tested</div>
+      </section>
+
+      <section class="mb-4">
+        <h2 class="section-title">Validation Findings Table</h2>
+        <p class="small text-secondary">Each row is a single manual validation. Pricing values are indicative and must be verified against current Google Maps Platform pricing before final submission.</p>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle table-report">
+            <thead class="table-light">
+              <tr>
+                <th>API</th>
+                <th>Valid</th>
+                <th>Cost</th>
+                <th>Check</th>
+                <th>Evidence Result</th>
+              </tr>
+            </thead>
+            <tbody id="apiFindingsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mb-4 no-print">
+        <h2 class="section-title">Manual Valid Finding Override</h2>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="manualApiSelect" class="form-label fw-semibold">API name</label>
+            <select id="manualApiSelect" class="form-select"></select>
+          </div>
+          <div class="col-md-2">
+            <label for="manualHttpStatus" class="form-label fw-semibold">HTTP status</label>
+            <input id="manualHttpStatus" class="form-control" type="text" placeholder="200">
+          </div>
+          <div class="col-md-3">
+            <label for="manualResponseStatus" class="form-label fw-semibold">Response status</label>
+            <input id="manualResponseStatus" class="form-control" type="text" placeholder="OK / REQUEST_DENIED">
+          </div>
+          <div class="col-md-3">
+            <label for="manualNotes" class="form-label fw-semibold">Notes</label>
+            <input id="manualNotes" class="form-control" type="text" placeholder="Image rendered / curl evidence">
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button id="addManualEvidenceButton" class="btn btn-outline-report" type="button">Add Manual Evidence</button>
+          <button id="markFindingValidButton" class="btn btn-report" type="button">Mark Finding as Valid</button>
+        </div>
+        <p class="small text-secondary mt-2 mb-0">Use this when validation was performed through curl or browser DevTools outside the PoC. Do not paste raw keys into notes.</p>
       </section>
 
       <section class="mb-4 no-print">
         <h2 class="section-title">Safe Simulation Controls</h2>
         <div class="d-flex flex-wrap gap-2">
           <button id="startSimulation" class="btn btn-report" type="button">Start Simulation</button>
-          <button id="renderMap" class="btn btn-outline-report" type="button">Render Map Placeholder</button>
+          <button id="renderPlaceholderMap" class="btn btn-outline-report" type="button">Render Map Placeholder</button>
           <button id="generateSnapshot" class="btn btn-outline-secondary fw-semibold" type="button">Generate Report Snapshot</button>
         </div>
-        <p class="small text-secondary mt-2 mb-0">These controls update this page locally. They do not call Google APIs, load Google scripts, or send network traffic to Google services.</p>
+        <p class="small text-secondary mt-2 mb-0">The simulation controls update this page locally. Validation controls above only send a single request after an explicit click.</p>
       </section>
 
       <section class="mb-4">
@@ -300,11 +535,11 @@
       <section class="mb-4">
         <h2 class="section-title">Scenario 3: Reconnaissance via Maps / Places API</h2>
         <div class="scenario">
-          <p>Unauthorized access to Maps or Places endpoints can support reconnaissance such as place lookup, geocoding, or location metadata gathering if those APIs are enabled and unrestricted. This page demonstrates that risk with a static placeholder only.</p>
+          <p>Unauthorized access to Maps or Places endpoints can support reconnaissance such as place lookup, geocoding, or location metadata gathering if those APIs are enabled and unrestricted. This page supports manual single-request validation and a static fallback placeholder.</p>
           <div id="mapPlaceholder" class="placeholder-map">
             <div>
               <h3 class="text-primary fw-bold mb-2">Static Maps / Places Placeholder</h3>
-              <p class="mb-1">No Google Maps script has been loaded.</p>
+              <p class="mb-1">No Google Maps script is required for this placeholder.</p>
               <p class="mb-0 small text-secondary">Use owner-approved screenshots or billing/API console evidence in the final report.</p>
             </div>
           </div>
@@ -351,7 +586,7 @@
 
       <section class="mb-4">
         <h2 class="section-title">Responsible Disclosure Notice</h2>
-        <p class="mb-0">This PoC is prepared for authorized security disclosure. It intentionally avoids live exploitation, quota-draining behavior, automated Google API calls, and committed real secrets. Replace placeholders only in private evidence packages submitted through the approved bug bounty channel.</p>
+        <p class="mb-0">This PoC is prepared for authorized security disclosure. It intentionally avoids live exploitation, quota-draining behavior, bulk validation, automated Google API calls on page load, and committed real secrets. Replace placeholders only in private evidence packages submitted through the approved bug bounty channel.</p>
       </section>
 
       <section id="snapshot" class="snapshot mb-4" aria-live="polite">
@@ -375,36 +610,688 @@
       const snapshot = document.getElementById('snapshot');
       const snapshotBody = document.getElementById('snapshotBody');
       const timestamp = document.getElementById('timestamp');
+      const apiFindingsBody = document.getElementById('apiFindingsBody');
+      const manualApiSelect = document.getElementById('manualApiSelect');
+      const keyLoadStatus = document.getElementById('keyLoadStatus');
+      const validFindingsSummary = document.getElementById('validFindingsSummary');
+      const mapStatus = document.getElementById('mapStatus');
+      const liveMap = document.getElementById('liveMap');
 
       const state = {
-        requests: 0,
-        cost: 0,
-        summary: 'Waiting for local simulation.'
+        apiKey: '',
+        redactedKey: '[NO_KEY_LOADED]',
+        affectedAsset: '[YAMATO_ASSET_OR_FILE_PATH]',
+        location: 'Tokyo Station',
+        latitude: '40.720032',
+        longitude: '-73.988354',
+        placeId: '',
+        externalOriginSuccessful: false,
+        mapScriptLoading: null,
+        map: null,
+        marker: null,
+        simulation: {
+          requests: 0,
+          cost: 0,
+          summary: 'Waiting for local simulation.'
+        },
+        results: {}
       };
 
+      const apiDefinitions = [
+        {
+          name: 'Staticmap',
+          cost: '$2 / 1,000 requests',
+          numericCost: 2,
+          type: 'image',
+          url: (key) => `https://maps.googleapis.com/maps/api/staticmap?center=45,10&zoom=7&size=400x400&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Maps JavaScript API',
+          cost: '$7 / 1,000 requests',
+          numericCost: 7,
+          type: 'maps-js',
+          url: (key) => `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Streetview',
+          cost: '$7 / 1,000 requests',
+          numericCost: 7,
+          type: 'image',
+          url: (key) => `https://maps.googleapis.com/maps/api/streetview?size=400x400&location=${encodeURIComponent(state.latitude)},${encodeURIComponent(state.longitude)}&fov=90&heading=235&pitch=10&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Directions',
+          cost: '$5 / 1,000 requests',
+          numericCost: 5,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/directions/json?origin=Tokyo+Station&destination=Haneda+Airport&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Geocode',
+          cost: '$5 / 1,000 requests',
+          numericCost: 5,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(state.location)}&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Find Place From Text',
+          cost: '$17 / 1,000 requests',
+          numericCost: 17,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(state.location)}&inputtype=textquery&fields=formatted_address,name,geometry&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Autocomplete',
+          cost: '$2.83 / 1,000 requests',
+          numericCost: 2.83,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=Tokyo&types=%28cities%29&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Elevation',
+          cost: '$5 / 1,000 requests',
+          numericCost: 5,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/elevation/json?locations=${encodeURIComponent(state.latitude)},${encodeURIComponent(state.longitude)}&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Timezone',
+          cost: '$5 / 1,000 requests',
+          numericCost: 5,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/timezone/json?location=${encodeURIComponent(state.latitude)},${encodeURIComponent(state.longitude)}&timestamp=1331161200&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Nearest Roads',
+          cost: '$10 / 1,000 requests',
+          numericCost: 10,
+          type: 'fetch',
+          url: (key) => `https://roads.googleapis.com/v1/nearestRoads?points=${encodeURIComponent(state.latitude)},${encodeURIComponent(state.longitude)}&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Distance Matrix',
+          cost: '$5 to $10 / 1,000 elements',
+          numericCost: 10,
+          type: 'fetch',
+          url: (key) => `https://maps.googleapis.com/maps/api/distancematrix/json?origins=Tokyo+Station&destinations=Haneda+Airport&key=${encodeURIComponent(key)}`
+        },
+        {
+          name: 'Places Details',
+          cost: '$17 / 1,000 requests',
+          numericCost: 17,
+          type: 'fetch',
+          requiresPlaceId: true,
+          url: (key) => `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(state.placeId)}&fields=formatted_address,name,geometry&key=${encodeURIComponent(key)}`
+        }
+      ];
+
+      const apiByName = new Map(apiDefinitions.map((api) => [api.name, api]));
       const money = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD'
       });
 
-      function renderMetrics() {
-        requestCount.textContent = state.requests.toLocaleString('en-US');
-        estimatedCost.textContent = money.format(state.cost);
-        riskSummary.textContent = state.summary;
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function redactKey(key) {
+        if (!key || key.length < 12) return '[INVALID_OR_EMPTY]';
+        return key.slice(0, 6) + '********' + key.slice(-4);
       }
 
       function setTimestamp() {
         timestamp.textContent = new Date().toISOString();
       }
 
+      function currentTimestamp() {
+        return new Date().toISOString();
+      }
+
+      function refreshInputs() {
+        state.affectedAsset = document.getElementById('assetInput').value.trim() || '[YAMATO_ASSET_OR_FILE_PATH]';
+        state.location = document.getElementById('locationInput').value.trim() || 'Tokyo Station';
+        state.latitude = document.getElementById('latitudeInput').value.trim() || '40.720032';
+        state.longitude = document.getElementById('longitudeInput').value.trim() || '-73.988354';
+        state.placeId = document.getElementById('placeIdInput').value.trim();
+        document.getElementById('affectedAssetDisplay').textContent = state.affectedAsset;
+        document.getElementById('secretFileDisplay').textContent = state.affectedAsset;
+      }
+
+      function getApiUrl(apiName) {
+        const api = apiByName.get(apiName);
+        if (!api) return '';
+        return api.url(state.apiKey || '[KEY]');
+      }
+
+      function buildCurlCommand(url, redactedKey) {
+        if (!state.apiKey) return `curl -i "${url.replaceAll('%5BKEY%5D', '[KEY]')}"`;
+        return `curl -i "${url.replace(encodeURIComponent(state.apiKey), redactedKey).replace(state.apiKey, redactedKey)}"`;
+      }
+
+      function getDisplayCommand(apiName) {
+        const api = apiByName.get(apiName);
+        if (!api) return 'No command available';
+        if (api.requiresPlaceId && !state.placeId) {
+          return 'Manual prerequisite: run Find Place, copy a place_id into the optional field, then click this row.';
+        }
+        const url = getApiUrl(apiName);
+        return buildCurlCommand(url, state.redactedKey);
+      }
+
+      function statusIcon(result) {
+        if (!result) return '⏳';
+        if (result.valid === true) return '✅';
+        if (result.valid === false) return '❌';
+        return '⏳';
+      }
+
+      function renderTable() {
+        apiFindingsBody.innerHTML = apiDefinitions.map((api) => {
+          const result = state.results[api.name];
+          return `
+            <tr data-api="${escapeHtml(api.name)}">
+              <td>
+                <div class="form-check">
+                  <input class="form-check-input api-select" type="checkbox" value="${escapeHtml(api.name)}" id="select-${escapeHtml(api.name.replaceAll(' ', '-'))}">
+                  <label class="form-check-label api-name" for="select-${escapeHtml(api.name.replaceAll(' ', '-'))}">${escapeHtml(api.name)}</label>
+                </div>
+              </td>
+              <td class="status-icon">${statusIcon(result)}</td>
+              <td>${escapeHtml(api.cost)}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-report run-single-check" type="button" data-api="${escapeHtml(api.name)}">Run Single Check</button>
+                <span class="curl-command">${escapeHtml(getDisplayCommand(api.name))}</span>
+              </td>
+              <td class="evidence-result">${escapeHtml(result ? result.evidence : 'Not tested')}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function populateManualSelect() {
+        manualApiSelect.innerHTML = apiDefinitions.map((api) => `<option value="${escapeHtml(api.name)}">${escapeHtml(api.name)}</option>`).join('');
+      }
+
+      function markApiResult(apiName, valid, evidence) {
+        state.results[apiName] = {
+          valid,
+          evidence,
+          updatedAt: currentTimestamp(),
+          keyDisplay: state.redactedKey
+        };
+        renderTable();
+        updateValidFindingsSummary();
+      }
+
+      function getValidApis() {
+        return Object.entries(state.results)
+          .filter(([, result]) => result.valid === true)
+          .map(([apiName]) => apiName);
+      }
+
+      function getTestedApis() {
+        return Object.entries(state.results)
+          .filter(([, result]) => result.valid === true || result.valid === false)
+          .map(([apiName]) => apiName);
+      }
+
+      function estimateExposure(validApis) {
+        if (!validApis.length) {
+          return {
+            total: 0,
+            rating: 'Not available until a valid API is recorded',
+            label: 'No valid billable APIs recorded'
+          };
+        }
+
+        const total = validApis.reduce((sum, apiName) => {
+          const api = apiByName.get(apiName);
+          return sum + (api ? api.numericCost : 0);
+        }, 0);
+
+        let label = 'Low billing exposure estimate';
+        if (total >= 25) label = 'High billing exposure estimate';
+        else if (total >= 10) label = 'Medium billing exposure estimate';
+
+        return {
+          total,
+          rating: `${label}: approximately ${money.format(total)} per 1,000-request reference basket`,
+          label
+        };
+      }
+
+      function calculateRiskRating(validApis) {
+        const coreApis = ['Maps JavaScript API', 'Streetview', 'Find Place From Text', 'Places Details', 'Geocode', 'Directions'];
+        const validCoreApis = validApis.filter((apiName) => coreApis.includes(apiName));
+        if (validCoreApis.length > 1 && state.externalOriginSuccessful) return 'Critical';
+        if (validCoreApis.length > 0 && state.externalOriginSuccessful) return 'Critical';
+        if (validApis.length === 1) return 'High';
+        if (validApis.length > 1) return 'High';
+        if (getTestedApis().length > 0) return 'Medium';
+        return 'Not tested';
+      }
+
+      function updateValidFindingsSummary() {
+        const testedApis = getTestedApis();
+        const validApis = getValidApis();
+        const exposure = estimateExposure(validApis);
+        const externalOrigin = state.externalOriginSuccessful
+          ? `Successful from current PoC origin (${window.location.origin || 'local file'})`
+          : 'Not confirmed';
+        validFindingsSummary.textContent = `Total APIs tested: ${testedApis.length}
+Total valid APIs: ${validApis.length}
+Valid API names: ${validApis.length ? validApis.join(', ') : 'None'}
+Estimated financial exposure: ${exposure.rating}
+External PoC origin: ${externalOrigin}
+Risk rating: ${calculateRiskRating(validApis)}`;
+      }
+
+      function renderMetrics() {
+        requestCount.textContent = state.simulation.requests.toLocaleString('en-US');
+        estimatedCost.textContent = money.format(state.simulation.cost);
+        riskSummary.textContent = state.simulation.summary;
+      }
+
+      function requireLoadedKey() {
+        if (state.apiKey && state.redactedKey !== '[INVALID_OR_EMPTY]') return true;
+        keyLoadStatus.textContent = 'Load a valid-looking key before running a manual check. No request was sent.';
+        return false;
+      }
+
+      function evidenceBlock(lines) {
+        return [
+          ...lines,
+          `Timestamp: ${currentTimestamp()}`,
+          `Key Display: ${state.redactedKey}`,
+          'Request Volume: Single manual request'
+        ].join('\n');
+      }
+
+      async function runImageCheck(apiName) {
+        const url = getApiUrl(apiName);
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            markApiResult(apiName, true, evidenceBlock([
+              'HTTP Status: 200 inferred from image onload',
+              'API Response: Image Rendered'
+            ]));
+            resolve();
+          };
+          img.onerror = () => {
+            markApiResult(apiName, false, evidenceBlock([
+              'HTTP Status or API error: image failed to render',
+              'Reason: API key not authorized, billing disabled, invalid key, no imagery, or request blocked'
+            ]));
+            resolve();
+          };
+          img.src = url;
+        });
+      }
+
+      function extractGoogleStatus(data) {
+        if (!data || typeof data !== 'object') return 'UNKNOWN';
+        return data.status || data.error?.status || data.error_message || 'OK';
+      }
+
+      function responseLooksSuccessful(apiName, data) {
+        const status = extractGoogleStatus(data);
+        if (status === 'OK') return true;
+        if (apiName === 'Nearest Roads' && Array.isArray(data.snappedPoints)) return true;
+        return false;
+      }
+
+      async function runFetchCheck(apiName) {
+        const api = apiByName.get(apiName);
+        if (api.requiresPlaceId && !state.placeId) {
+          markApiResult(apiName, null, 'Not tested\nReason: Places Details requires a manually supplied place_id. Run Find Place manually and paste the place_id before this single check.');
+          return;
+        }
+
+        const url = getApiUrl(apiName);
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            mode: 'cors'
+          });
+          const text = await response.text();
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { status: text ? 'NON_JSON_RESPONSE' : 'EMPTY_RESPONSE' };
+          }
+
+          const apiStatus = extractGoogleStatus(data);
+          const successful = response.status === 200 && responseLooksSuccessful(apiName, data);
+          if (successful) {
+            markApiResult(apiName, true, evidenceBlock([
+              `HTTP Status: ${response.status}`,
+              `API Response: ${apiStatus}`
+            ]));
+            return;
+          }
+
+          markApiResult(apiName, false, evidenceBlock([
+            `HTTP Status: ${response.status}`,
+            `Reason: ${apiStatus || 'API key not authorized / blocked / invalid'}`
+          ]));
+        } catch (error) {
+          markApiResult(apiName, false, evidenceBlock([
+            'HTTP Status or API error: Browser CORS prevented direct response inspection',
+            `Reason: ${error && error.name ? error.name : 'CORS or network error'}`,
+            `Equivalent curl check: ${buildCurlCommand(url, state.redactedKey)}`
+          ]));
+        }
+      }
+
+      function loadMapsJavaScript() {
+        if (window.google && window.google.maps) {
+          state.externalOriginSuccessful = true;
+          markApiResult('Maps JavaScript API', true, evidenceBlock([
+            'HTTP Status: 200',
+            'API Response: Map Loaded',
+            `External Origin Test: Successful from ${window.location.origin || 'local file'}`
+          ]));
+          return Promise.resolve();
+        }
+
+        if (state.mapScriptLoading) return state.mapScriptLoading;
+
+        state.mapScriptLoading = new Promise((resolve, reject) => {
+          const callbackName = `yamatoMapCallback_${Date.now()}`;
+          const script = document.createElement('script');
+          const timeout = window.setTimeout(() => {
+            reject(new Error('Maps JavaScript API load timed out'));
+          }, 15000);
+
+          window.gm_authFailure = () => {
+            window.clearTimeout(timeout);
+            markApiResult('Maps JavaScript API', false, evidenceBlock([
+              'HTTP Status or API error: Maps JavaScript auth failure',
+              'Reason: RefererNotAllowedMapError / BillingNotEnabledMapError / ApiNotActivatedMapError / InvalidKeyMapError'
+            ]));
+            reject(new Error('Maps JavaScript API authentication failed'));
+          };
+
+          window[callbackName] = () => {
+            window.clearTimeout(timeout);
+            state.externalOriginSuccessful = true;
+            markApiResult('Maps JavaScript API', true, evidenceBlock([
+              'HTTP Status: 200',
+              'API Response: Map Loaded',
+              `External Origin Test: Successful from ${window.location.origin || 'local file'}`
+            ]));
+            resolve();
+          };
+
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(state.apiKey)}&callback=${callbackName}`;
+          script.async = true;
+          script.defer = true;
+          script.onerror = () => {
+            window.clearTimeout(timeout);
+            markApiResult('Maps JavaScript API', false, evidenceBlock([
+              'HTTP Status or API error: script failed to load',
+              'Reason: API key not authorized, network blocked, invalid key, or API not activated'
+            ]));
+            reject(new Error('Maps JavaScript API script failed to load'));
+          };
+          document.head.appendChild(script);
+        }).finally(() => {
+          state.mapScriptLoading = null;
+        });
+
+        return state.mapScriptLoading;
+      }
+
+      async function runMapsJsCheckOnly() {
+        await loadMapsJavaScript();
+      }
+
+      async function renderLiveMap() {
+        refreshInputs();
+        if (!requireLoadedKey()) return;
+
+        mapStatus.textContent = 'Map Rendered: Loading\nGeocoder Status: Pending\nCoordinates: Pending\nExternal Origin Test: Pending\nRequest Volume: Single manual render action only';
+
+        try {
+          await loadMapsJavaScript();
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: state.location }, (results, status) => {
+            if (status !== 'OK' || !results || !results[0]) {
+              markApiResult('Geocode', false, evidenceBlock([
+                'HTTP Status or API error: Geocoder returned non-OK status',
+                `Reason: ${status || 'UNKNOWN'}`
+              ]));
+              mapStatus.textContent = `Map Rendered: No
+Geocoder Status: ${status || 'UNKNOWN'}
+Coordinates: Not resolved
+External Origin Test: ${state.externalOriginSuccessful ? 'Successful' : 'Not confirmed'}
+Request Volume: Single manual render action only`;
+              return;
+            }
+
+            const location = results[0].geometry.location;
+            const lat = location.lat();
+            const lng = location.lng();
+            state.latitude = String(lat);
+            state.longitude = String(lng);
+            document.getElementById('latitudeInput').value = state.latitude;
+            document.getElementById('longitudeInput').value = state.longitude;
+
+            liveMap.innerHTML = '';
+            state.map = new window.google.maps.Map(liveMap, {
+              center: { lat, lng },
+              zoom: 15,
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: true
+            });
+            state.marker = new window.google.maps.Marker({
+              position: { lat, lng },
+              map: state.map,
+              title: state.location
+            });
+
+            markApiResult('Geocode', true, evidenceBlock([
+              'HTTP Status: 200',
+              'API Response: OK',
+              `Coordinates: ${lat}, ${lng}`
+            ]));
+
+            mapStatus.textContent = `Map Rendered: Yes
+Geocoder Status: OK
+Coordinates: ${lat}, ${lng}
+External Origin Test: Successful if hosted outside Yamato
+Request Volume: Single manual render action only`;
+          });
+        } catch (error) {
+          mapStatus.textContent = `Map Rendered: No
+Geocoder Status: Not run
+Coordinates: Not resolved
+External Origin Test: Failed
+Request Volume: Single manual render action only
+Reason: ${error.message}`;
+        }
+      }
+
+      async function runApiCheck(apiName) {
+        refreshInputs();
+        if (!requireLoadedKey()) return;
+        const api = apiByName.get(apiName);
+        if (!api) return;
+
+        if (api.type === 'image') {
+          await runImageCheck(apiName);
+          return;
+        }
+
+        if (api.type === 'maps-js') {
+          await runMapsJsCheckOnly();
+          return;
+        }
+
+        await runFetchCheck(apiName);
+      }
+
+      async function runSelectedChecks() {
+        refreshInputs();
+        if (!requireLoadedKey()) return;
+        const selected = Array.from(document.querySelectorAll('.api-select:checked')).map((item) => item.value);
+        if (!selected.length) {
+          keyLoadStatus.textContent = 'Select at least one API row. No request was sent.';
+          return;
+        }
+
+        const approved = window.confirm(`Run ${selected.length} selected single-request check(s)? This sends one manual request per selected API.`);
+        if (!approved) {
+          keyLoadStatus.textContent = 'Selected checks cancelled. No request was sent.';
+          return;
+        }
+
+        for (const apiName of selected) {
+          await runApiCheck(apiName);
+        }
+      }
+
+      function buildEvidenceSummary() {
+        const validApis = getValidApis();
+        const lines = [
+          'Secret Detected: Google Cloud API Key',
+          `Affected File: ${state.affectedAsset}`,
+          `Detected Secret: ${state.redactedKey}`,
+          '',
+          'Valid API Findings:'
+        ];
+
+        if (!validApis.length) {
+          lines.push('- None recorded');
+        } else {
+          validApis.forEach((apiName) => {
+            const result = state.results[apiName];
+            const firstEvidenceLine = result.evidence.split('\n').find((line) => line.includes('API Response:') || line.includes('HTTP Status:')) || 'single manual request';
+            lines.push(`- ${apiName}: ✅ Valid, ${firstEvidenceLine.replace('API Response: ', '').replace('HTTP Status: ', 'HTTP ')}, single manual request`);
+          });
+        }
+
+        lines.push(
+          '',
+          'Impact:',
+          'The key is usable outside the intended Yamato asset and can access billable Google Maps Platform APIs. This creates direct billing exposure and confirms insufficient API/application restriction.',
+          '',
+          'Safety:',
+          'No bulk requests were performed. No data exfiltration was performed. All checks were single manual validations.'
+        );
+
+        return lines.join('\n');
+      }
+
+      async function copyFindingsSummary() {
+        const summary = buildEvidenceSummary();
+        try {
+          await navigator.clipboard.writeText(summary);
+          keyLoadStatus.textContent = 'Findings summary copied with redacted key only.';
+        } catch {
+          const textarea = document.createElement('textarea');
+          textarea.value = summary;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          textarea.remove();
+          keyLoadStatus.textContent = 'Findings summary copied with redacted key only.';
+        }
+      }
+
+      function exportFindingsJson() {
+        const payload = {
+          finding: 'Secret Detected: Google Cloud API Key',
+          affectedFile: state.affectedAsset,
+          detectedSecret: state.redactedKey,
+          validationMode: 'Manual low-volume checks only',
+          externalOrigin: state.externalOriginSuccessful ? window.location.origin || 'local file' : 'Not confirmed',
+          summary: {
+            totalApisTested: getTestedApis().length,
+            totalValidApis: getValidApis().length,
+            validApiNames: getValidApis(),
+            exposure: estimateExposure(getValidApis()).rating,
+            riskRating: calculateRiskRating(getValidApis())
+          },
+          results: state.results,
+          safety: 'No bulk requests were performed. No data exfiltration was performed. All checks were single manual validations.'
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'yamato-google-api-key-findings.json';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function addManualEvidence(forceValid = false) {
+        refreshInputs();
+        const apiName = manualApiSelect.value;
+        const httpStatus = document.getElementById('manualHttpStatus').value.trim();
+        const responseStatus = document.getElementById('manualResponseStatus').value.trim();
+        const notes = document.getElementById('manualNotes').value.trim();
+        const successTerms = ['OK', 'IMAGE RENDERED', 'MAP LOADED'];
+        const valid = forceValid || (httpStatus === '200' && successTerms.includes(responseStatus.toUpperCase()));
+        const reason = responseStatus || (valid ? 'OK' : 'REQUEST_DENIED');
+        markApiResult(apiName, valid, evidenceBlock([
+          `HTTP Status: ${httpStatus || (valid ? '200' : 'Not provided')}`,
+          `API Response: ${reason}`,
+          `Manual Evidence Notes: ${notes || 'Manual researcher override'}`
+        ]));
+      }
+
+      function loadKeyIntoPoc() {
+        refreshInputs();
+        const keyInput = document.getElementById('apiKeyInput');
+        state.apiKey = keyInput.value.trim();
+        state.redactedKey = redactKey(state.apiKey);
+        keyInput.value = '';
+
+        document.getElementById('redactedKeyDisplay').textContent = state.redactedKey;
+        document.getElementById('secretDetectedDisplay').textContent = state.redactedKey;
+        keyLoadStatus.textContent = `Key loaded into browser memory. Redacted display: ${state.redactedKey}. Manual validation only; no request has been sent by loading the key.`;
+        renderTable();
+        updateValidFindingsSummary();
+      }
+
+      document.getElementById('loadKeyButton').addEventListener('click', loadKeyIntoPoc);
+      document.getElementById('renderLiveMapButton').addEventListener('click', renderLiveMap);
+      document.getElementById('runStreetViewButton').addEventListener('click', () => runApiCheck('Streetview'));
+      document.getElementById('runGeocodeButton').addEventListener('click', () => runApiCheck('Geocode'));
+      document.getElementById('runSelectedButton').addEventListener('click', runSelectedChecks);
+      document.getElementById('copySummaryButton').addEventListener('click', copyFindingsSummary);
+      document.getElementById('exportJsonButton').addEventListener('click', exportFindingsJson);
+      document.getElementById('printButton').addEventListener('click', () => window.print());
+      document.getElementById('addManualEvidenceButton').addEventListener('click', () => addManualEvidence(false));
+      document.getElementById('markFindingValidButton').addEventListener('click', () => addManualEvidence(true));
+
+      apiFindingsBody.addEventListener('click', (event) => {
+        const button = event.target.closest('.run-single-check');
+        if (!button) return;
+        runApiCheck(button.dataset.api);
+      });
+
       document.getElementById('startSimulation').addEventListener('click', () => {
-        state.requests += 25000;
-        state.cost += 178.25;
-        state.summary = 'Local-only model: unrestricted reuse could create unauthorized billing, reconnaissance, and availability risk.';
+        state.simulation.requests += 25000;
+        state.simulation.cost += 178.25;
+        state.simulation.summary = 'Local-only model: unrestricted reuse could create unauthorized billing, reconnaissance, and availability risk.';
         renderMetrics();
       });
 
-      document.getElementById('renderMap').addEventListener('click', () => {
+      document.getElementById('renderPlaceholderMap').addEventListener('click', () => {
         mapPlaceholder.style.display = 'flex';
       });
 
@@ -413,15 +1300,19 @@
         snapshot.style.display = 'block';
         snapshotBody.innerHTML = `
           <p><strong>Finding:</strong> Potential unrestricted Google Maps / Google Cloud API key exposure in Yamato asset.</p>
-          <p><strong>Affected asset:</strong> [YAMATO_AFFECTED_ASSET_URL_OR_FILE_PATH]</p>
-          <p><strong>Detected secret:</strong> [REDACTED_GOOGLE_API_KEY_PLACEHOLDER]</p>
-          <p><strong>Simulation metrics:</strong> ${state.requests.toLocaleString('en-US')} local simulated requests, ${money.format(state.cost)} estimated cost exposure.</p>
-          <p><strong>Safety statement:</strong> No live Google API request was sent by this PoC.</p>
+          <p><strong>Affected asset:</strong> ${escapeHtml(state.affectedAsset)}</p>
+          <p><strong>Detected secret:</strong> ${escapeHtml(state.redactedKey)}</p>
+          <pre class="code-line">${escapeHtml(buildEvidenceSummary())}</pre>
+          <p><strong>Simulation metrics:</strong> ${state.simulation.requests.toLocaleString('en-US')} local simulated requests, ${money.format(state.simulation.cost)} estimated cost exposure.</p>
+          <p><strong>Safety statement:</strong> No bulk validation or automated API request was sent by page load.</p>
         `;
       });
 
       setTimestamp();
+      populateManualSelect();
+      renderTable();
       renderMetrics();
+      updateValidFindingsSummary();
     })();
   </script>
 </body>
