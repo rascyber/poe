@@ -1,0 +1,6 @@
+.env
+*.key
+secrets/
+evidence/raw/
+**/evidence/raw/
+node_modules/
