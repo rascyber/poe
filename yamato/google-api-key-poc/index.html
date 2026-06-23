@@ -98,6 +98,34 @@
       margin-bottom: 16px;
     }
 
+    .finding-panel {
+      background: #fff;
+      border: 1px solid var(--report-border);
+      border-radius: 6px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .finding-title {
+      color: var(--report-red);
+      font-size: clamp(1.7rem, 3vw, 2.45rem);
+      font-weight: 800;
+      line-height: 1.08;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f1b4ad;
+    }
+
+    .finding-label {
+      display: block;
+      color: var(--report-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     .valid-summary {
       background: var(--report-green);
       border: 1px solid var(--report-green-border);
@@ -118,6 +146,19 @@
       font-size: 0.84rem;
       overflow-wrap: anywhere;
       white-space: pre-wrap;
+    }
+
+    .code-badge {
+      display: inline-block;
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #d0d5dd;
+      border-radius: 4px;
+      background: #f2f4f7;
+      color: #344054;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.88rem;
+      overflow-wrap: anywhere;
     }
 
     .curl-command {
@@ -217,6 +258,8 @@
 
     .table-report {
       min-width: 1180px;
+      border-collapse: collapse;
+      border: 1px solid var(--report-border);
     }
 
     .table-report th {
@@ -225,6 +268,14 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       white-space: nowrap;
+      background: #f8f9fb;
+      border: 1px solid var(--report-border);
+      padding: 10px;
+    }
+
+    .table-report td {
+      border: 1px solid var(--report-border);
+      padding: 10px;
     }
 
     .api-name {
@@ -233,8 +284,38 @@
     }
 
     .status-icon {
-      font-size: 1.25rem;
+      font-size: 1.45rem;
+      font-weight: 800;
       line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .status-valid {
+      color: #137333;
+      background: #e6f4ea;
+    }
+
+    .status-invalid {
+      color: #a50e0e;
+      background: #fce8e6;
+    }
+
+    .status-pending {
+      color: #7a4d00;
+      background: #fef7e0;
+    }
+
+    .finding-row-valid td {
+      background: #fbfffd;
+    }
+
+    .finding-row-invalid td {
+      background: #fffafa;
+    }
+
+    .finding-row-pending td {
+      background: #fffdf7;
     }
 
     .evidence-result {
@@ -336,24 +417,24 @@
       </section>
 
       <section class="mb-4">
-        <h2 class="section-title">Secret Detected: Google Cloud API Key</h2>
-        <div class="evidence-box">
+        <div class="finding-panel">
+          <h2 class="finding-title">Secret Detected: Google Cloud API Key</h2>
           <div class="row g-3">
             <div class="col-md-6">
-              <strong>File:</strong>
-              <span id="secretFileDisplay" class="code-line">[YAMATO_ASSET_OR_FILE_PATH]</span>
+              <span class="finding-label">File</span>
+              <span id="secretFileDisplay" class="code-badge">[YAMATO_ASSET_OR_FILE_PATH]</span>
             </div>
             <div class="col-md-6">
-              <strong>Detected Secret:</strong>
-              <span id="secretDetectedDisplay" class="code-line">AI&#122;a********LAST4</span>
+              <span class="finding-label">Detected Secret</span>
+              <span id="secretDetectedDisplay" class="code-badge">AI&#122;a********LAST4</span>
             </div>
             <div class="col-md-6">
-              <strong>Restriction Status:</strong>
-              <span id="restrictionStatusDisplay" class="code-line">Valid APIs detected / insufficient API restriction</span>
+              <span class="finding-label">Restriction Status</span>
+              <span id="restrictionStatusDisplay" class="code-badge">Valid APIs detected / insufficient API restriction</span>
             </div>
             <div class="col-md-6">
-              <strong>Validation Mode:</strong>
-              <span class="code-line">Manual low-volume checks only</span>
+              <span class="finding-label">Validation Mode</span>
+              <span class="code-badge">Manual low-volume checks only</span>
             </div>
           </div>
         </div>
@@ -434,7 +515,7 @@ Risk rating: Not tested</div>
       </section>
 
       <section class="mb-4">
-        <h2 class="section-title">Validation Findings Table</h2>
+        <h2 class="finding-title">Validation Findings Table</h2>
         <p class="small text-secondary">Each row is a single manual validation. Pricing values are indicative and must be verified against current Google Maps Platform pricing before final submission.</p>
         <div class="table-responsive">
           <table class="table table-bordered align-middle table-report">
@@ -721,7 +802,7 @@ Risk rating: Not tested</div>
           numericCost: 17,
           type: 'fetch',
           requiresPlaceId: true,
-          url: (key) => `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(state.placeId)}&fields=formatted_address,name,geometry&key=${encodeURIComponent(key)}`
+          url: (key) => `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(state.placeId || '[PLACE_ID]')}&fields=formatted_address,name,geometry&key=${encodeURIComponent(key)}`
         }
       ];
 
@@ -770,16 +851,16 @@ Risk rating: Not tested</div>
       }
 
       function buildCurlCommand(url, redactedKey) {
-        if (!state.apiKey) return `curl -i "${url.replaceAll('%5BKEY%5D', '[KEY]')}"`;
-        return `curl -i "${url.replace(encodeURIComponent(state.apiKey), redactedKey).replace(state.apiKey, redactedKey)}"`;
+        const normalizedUrl = url
+          .replaceAll('%5BKEY%5D', '[KEY]')
+          .replaceAll('%5BPLACE_ID%5D', '[PLACE_ID]');
+        if (!state.apiKey) return `curl -i "${normalizedUrl}"`;
+        return `curl -i "${normalizedUrl.replace(encodeURIComponent(state.apiKey), redactedKey).replace(state.apiKey, redactedKey)}"`;
       }
 
       function getDisplayCommand(apiName) {
         const api = apiByName.get(apiName);
         if (!api) return 'No command available';
-        if (api.requiresPlaceId && !state.placeId) {
-          return 'Manual prerequisite: run Find Place, copy a place_id into the optional field, then click this row.';
-        }
         const url = getApiUrl(apiName);
         return buildCurlCommand(url, state.redactedKey);
       }
@@ -791,24 +872,48 @@ Risk rating: Not tested</div>
         return '⏳';
       }
 
+      function statusClass(result) {
+        if (!result) return 'status-pending';
+        if (result.valid === true) return 'status-valid';
+        if (result.valid === false) return 'status-invalid';
+        return 'status-pending';
+      }
+
+      function rowClass(result) {
+        if (!result) return 'finding-row-pending';
+        if (result.valid === true) return 'finding-row-valid';
+        if (result.valid === false) return 'finding-row-invalid';
+        return 'finding-row-pending';
+      }
+
+      function notTestedEvidence(apiName) {
+        const prerequisite = apiName === 'Places Details'
+          ? '\nReference: Supply [PLACE_ID] manually before running this row.'
+          : '';
+        return `Status: Not tested
+Result: Not tested
+Timestamp: Not tested
+Request Volume: 0${prerequisite}`;
+      }
+
       function renderTable() {
         apiFindingsBody.innerHTML = apiDefinitions.map((api) => {
           const result = state.results[api.name];
           return `
-            <tr data-api="${escapeHtml(api.name)}">
+            <tr class="${rowClass(result)}" data-api="${escapeHtml(api.name)}">
               <td>
                 <div class="form-check">
                   <input class="form-check-input api-select" type="checkbox" value="${escapeHtml(api.name)}" id="select-${escapeHtml(api.name.replaceAll(' ', '-'))}">
                   <label class="form-check-label api-name" for="select-${escapeHtml(api.name.replaceAll(' ', '-'))}">${escapeHtml(api.name)}</label>
                 </div>
               </td>
-              <td class="status-icon">${statusIcon(result)}</td>
+              <td class="status-icon ${statusClass(result)}">${statusIcon(result)}</td>
               <td>${escapeHtml(api.cost)}</td>
               <td>
                 <button class="btn btn-sm btn-outline-report run-single-check" type="button" data-api="${escapeHtml(api.name)}">Run Single Check</button>
                 <span class="curl-command">${escapeHtml(getDisplayCommand(api.name))}</span>
               </td>
-              <td class="evidence-result">${escapeHtml(result ? result.evidence : 'Not tested')}</td>
+              <td class="evidence-result">${escapeHtml(result ? result.evidence : notTestedEvidence(api.name))}</td>
             </tr>
           `;
         }).join('');
@@ -919,14 +1024,15 @@ Risk rating: ${calculateRiskRating(validApis)}`;
           const img = new Image();
           img.onload = () => {
             markApiResult(apiName, true, evidenceBlock([
-              'HTTP Status: 200 inferred from image onload',
-              'API Response: Image Rendered'
+              'Status: HTTP 200 inferred from image onload',
+              'Result: Image Rendered'
             ]));
             resolve();
           };
           img.onerror = () => {
             markApiResult(apiName, false, evidenceBlock([
-              'HTTP Status or API error: image failed to render',
+              'Status: Image failed to render',
+              'Result: Blocked / invalid / no image rendered',
               'Reason: API key not authorized, billing disabled, invalid key, no imagery, or request blocked'
             ]));
             resolve();
@@ -950,7 +1056,11 @@ Risk rating: ${calculateRiskRating(validApis)}`;
       async function runFetchCheck(apiName) {
         const api = apiByName.get(apiName);
         if (api.requiresPlaceId && !state.placeId) {
-          markApiResult(apiName, null, 'Not tested\nReason: Places Details requires a manually supplied place_id. Run Find Place manually and paste the place_id before this single check.');
+          markApiResult(apiName, null, `Status: Not tested
+Result: Missing place_id
+Timestamp: ${currentTimestamp()}
+Request Volume: 0
+Reference: Run Find Place manually, copy a place_id into the optional field, then click this row.`);
           return;
         }
 
@@ -973,19 +1083,21 @@ Risk rating: ${calculateRiskRating(validApis)}`;
           const successful = response.status === 200 && responseLooksSuccessful(apiName, data);
           if (successful) {
             markApiResult(apiName, true, evidenceBlock([
-              `HTTP Status: ${response.status}`,
-              `API Response: ${apiStatus}`
+              `Status: HTTP ${response.status}`,
+              `Result: ${apiStatus}`
             ]));
             return;
           }
 
           markApiResult(apiName, false, evidenceBlock([
-            `HTTP Status: ${response.status}`,
+            `Status: HTTP ${response.status}`,
+            `Result: ${apiStatus || 'Blocked / invalid'}`,
             `Reason: ${apiStatus || 'API key not authorized / blocked / invalid'}`
           ]));
         } catch (error) {
           markApiResult(apiName, false, evidenceBlock([
-            'HTTP Status or API error: Browser CORS prevented direct response inspection',
+            'Status: Browser CORS prevented direct response inspection',
+            'Result: CORS or network blocked',
             `Reason: ${error && error.name ? error.name : 'CORS or network error'}`,
             `Equivalent curl check: ${buildCurlCommand(url, state.redactedKey)}`
           ]));
@@ -996,8 +1108,8 @@ Risk rating: ${calculateRiskRating(validApis)}`;
         if (window.google && window.google.maps) {
           state.externalOriginSuccessful = true;
           markApiResult('Maps JavaScript API', true, evidenceBlock([
-            'HTTP Status: 200',
-            'API Response: Map Loaded',
+            'Status: HTTP 200',
+            'Result: Map Loaded',
             `External Origin Test: Successful from ${window.location.origin || 'local file'}`
           ]));
           return Promise.resolve();
@@ -1015,7 +1127,8 @@ Risk rating: ${calculateRiskRating(validApis)}`;
           window.gm_authFailure = () => {
             window.clearTimeout(timeout);
             markApiResult('Maps JavaScript API', false, evidenceBlock([
-              'HTTP Status or API error: Maps JavaScript auth failure',
+              'Status: Maps JavaScript auth failure',
+              'Result: Blocked / invalid',
               'Reason: RefererNotAllowedMapError / BillingNotEnabledMapError / ApiNotActivatedMapError / InvalidKeyMapError'
             ]));
             reject(new Error('Maps JavaScript API authentication failed'));
@@ -1025,8 +1138,8 @@ Risk rating: ${calculateRiskRating(validApis)}`;
             window.clearTimeout(timeout);
             state.externalOriginSuccessful = true;
             markApiResult('Maps JavaScript API', true, evidenceBlock([
-              'HTTP Status: 200',
-              'API Response: Map Loaded',
+              'Status: HTTP 200',
+              'Result: Map Loaded',
               `External Origin Test: Successful from ${window.location.origin || 'local file'}`
             ]));
             resolve();
@@ -1038,7 +1151,8 @@ Risk rating: ${calculateRiskRating(validApis)}`;
           script.onerror = () => {
             window.clearTimeout(timeout);
             markApiResult('Maps JavaScript API', false, evidenceBlock([
-              'HTTP Status or API error: script failed to load',
+              'Status: Script failed to load',
+              'Result: Blocked / invalid',
               'Reason: API key not authorized, network blocked, invalid key, or API not activated'
             ]));
             reject(new Error('Maps JavaScript API script failed to load'));
@@ -1067,7 +1181,8 @@ Risk rating: ${calculateRiskRating(validApis)}`;
           geocoder.geocode({ address: state.location }, (results, status) => {
             if (status !== 'OK' || !results || !results[0]) {
               markApiResult('Geocode', false, evidenceBlock([
-                'HTTP Status or API error: Geocoder returned non-OK status',
+                'Status: Geocoder returned non-OK status',
+                `Result: ${status || 'UNKNOWN'}`,
                 `Reason: ${status || 'UNKNOWN'}`
               ]));
               mapStatus.textContent = `Map Rendered: No
@@ -1101,8 +1216,8 @@ Request Volume: Single manual render action only`;
             });
 
             markApiResult('Geocode', true, evidenceBlock([
-              'HTTP Status: 200',
-              'API Response: OK',
+              'Status: HTTP 200',
+              'Result: OK',
               `Coordinates: ${lat}, ${lng}`
             ]));
 
@@ -1176,8 +1291,9 @@ Reason: ${error.message}`;
         } else {
           validApis.forEach((apiName) => {
             const result = state.results[apiName];
-            const firstEvidenceLine = result.evidence.split('\n').find((line) => line.includes('API Response:') || line.includes('HTTP Status:')) || 'single manual request';
-            lines.push(`- ${apiName}: ✅ Valid, ${firstEvidenceLine.replace('API Response: ', '').replace('HTTP Status: ', 'HTTP ')}, single manual request`);
+            const resultLine = result.evidence.split('\n').find((line) => line.startsWith('Result:')) || 'Result: single manual request';
+            const statusLine = result.evidence.split('\n').find((line) => line.startsWith('Status:')) || 'Status: HTTP 200';
+            lines.push(`- ${apiName}: ✅ Valid, ${resultLine.replace('Result: ', '')}, ${statusLine.replace('Status: ', '')}, single manual request`);
           });
         }
 
@@ -1247,8 +1363,8 @@ Reason: ${error.message}`;
         const valid = forceValid || (httpStatus === '200' && successTerms.includes(responseStatus.toUpperCase()));
         const reason = responseStatus || (valid ? 'OK' : 'REQUEST_DENIED');
         markApiResult(apiName, valid, evidenceBlock([
-          `HTTP Status: ${httpStatus || (valid ? '200' : 'Not provided')}`,
-          `API Response: ${reason}`,
+          `Status: HTTP ${httpStatus || (valid ? '200' : 'Not provided')}`,
+          `Result: ${reason}`,
           `Manual Evidence Notes: ${notes || 'Manual researcher override'}`
         ]));
       }
